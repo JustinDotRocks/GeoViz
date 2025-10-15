@@ -25,8 +25,8 @@ TypeScript, Material UI, ArcGIS, and Three.js.
 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/geo-viz-app.git
-cd geo-viz-app
+git clone https://github.com/JustinDotRocks/GeoViz.git
+cd GeoViz
 ```
 
 2. Install dependencies
