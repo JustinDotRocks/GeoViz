@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
 	Box,
 	CssBaseline,
@@ -22,6 +22,15 @@ const theme = createTheme({
 		mode: "dark",
 	},
 });
+
+interface WeatherData {
+	type?: string;
+	temperature?: number;
+	precipitation?: number;
+	station?: string;
+	date?: string;
+	visible?: boolean;
+}
 
 // Define data categories and sources
 const initialCategories = [
@@ -103,13 +112,56 @@ const initialCategories = [
 
 function App() {
 	const [mapData, setMapData] = useState(null);
-
+	const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
 	const [sidebarOpen, setSidebarOpen] = useState(true);
 	const [categories, setCategories] = useState(initialCategories);
 	const [selectedData, setSelectedData] = useState([
 		"environment-canada",
 		"nrcan-elevation",
 	]);
+
+	// Fetch Environment Canada weather data when toggled on
+	useEffect(() => {
+		if (selectedData.includes("environment-canada")) {
+			console.log("Fetching Environment Canada weather data...");
+
+			fetch(
+				"https://api.weather.gc.ca/collections/climate-daily/items?limit=1"
+			)
+				.then((res) => res.json())
+				.then((data) => {
+					console.log("Weather API response:", data); // ADD THIS LINE
+
+					// TODO: Parse the actual API response here!
+					// FIXED: Parse the actual API response correctly
+					const feature = data.features?.[0];
+					const props = feature?.properties || {};
+
+					setWeatherData({
+						type: "environment-canada",
+						temperature: props.MEAN_TEMPERATURE,
+						precipitation: props.TOTAL_PRECIPITATION,
+						station: props.STATION_NAME,
+						date: props.LOCAL_DATE,
+						visible: true,
+					});
+
+					console.log("Parsed weather data:", {
+						temperature: props.MEAN_TEMPERATURE,
+						precipitation: props.TOTAL_PRECIPITATION,
+						station: props.STATION_NAME,
+						date: props.LOCAL_DATE,
+					});
+				})
+				.catch((err) => {
+					console.error("Weather API error:", err); // ADD THIS LINE
+
+					setWeatherData(null); // No mock data, just clear on error
+				});
+		} else {
+			setWeatherData(null);
+		}
+	}, [selectedData]);
 
 	const handleDataToggle = (dataId: string) => {
 		setSelectedData((prev) =>
@@ -194,6 +246,8 @@ function App() {
 						showTerrain={selectedData.includes(
 							"nrcan-elevation"
 						)}
+						weatherData={weatherData} // <-- Pass weatherData prop
+						selectedData={selectedData} // <-- Pass selectedData prop
 					/>{" "}
 				</Box>
 			</Box>
