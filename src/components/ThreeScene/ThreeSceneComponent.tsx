@@ -1,8 +1,6 @@
-import { useRef } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Text } from "@react-three/drei";
 import { Box as MuiBox, Typography } from "@mui/material";
-import * as THREE from "three";
 import ElevationTerrain from "./ElevationTerrain";
 import TerrainDebugInfo from "./TerrainDebugInfo";
 
@@ -13,57 +11,6 @@ interface ThreeSceneProps {
 	weatherData: any;
 }
 
-// Weather overlay visualization
-// function WeatherOverlay({
-// 	weatherData,
-// 	visible = true,
-// }: {
-// 	weatherData: any;
-// 	visible?: boolean;
-// }) {
-// 	const meshRef = useRef<THREE.Mesh>(null);
-
-// 	useFrame((state) => {
-// 		if (meshRef.current && meshRef.current.material && visible) {
-// 			const material = meshRef.current
-// 				.material as THREE.MeshBasicMaterial;
-// 			const baseOpacity = weatherData?.opacity || 0.3;
-// 			const weatherIntensity = weatherData?.visible ? 1 : 0.5;
-// 			material.opacity =
-// 				baseOpacity +
-// 				Math.sin(state.clock.elapsedTime * weatherIntensity) *
-// 					0.1;
-// 		}
-// 	});
-
-// 	const getWeatherColor = () => {
-// 		if (!weatherData) return "#87CEEB";
-// 		if (weatherData.type === "rain") return "#4682B4";
-// 		if (weatherData.type === "snow") return "#F0F8FF";
-// 		if (weatherData.type === "fog") return "#708090";
-// 		if (weatherData.temperature < 0) return "#B0E0E6";
-// 		return "#87CEEB";
-// 	};
-
-// 	if (!visible || (weatherData && weatherData.visible === false)) {
-// 		return null;
-// 	}
-
-// 	return (
-// 		<mesh
-// 			ref={meshRef}
-// 			position={[0, 2, 0]}
-// 			rotation={[-Math.PI / 2, 0, 0]}
-// 		>
-// 			<planeGeometry args={[25, 25]} />
-// 			<meshBasicMaterial
-// 				color={getWeatherColor()}
-// 				transparent
-// 				opacity={weatherData?.opacity || 0.3}
-// 			/>
-// 		</mesh>
-// 	);
-// }
 function WeatherOverlay({
 	weatherData,
 	visible = true,
@@ -221,14 +168,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 				/>
 				<pointLight position={[-10, 10, -10]} intensity={0.3} />
 
-				{/* Real 3D Terrain - extracted component */}
-				{/* <ElevationTerrain
-					elevationData={data?.elevation?.data || null}
-					visible={
-						showElevation || selectedData.length === 0
-					}
-					wireframe={false}
-				/> */}
 				{/* Only render terrain if showTerrain is true */}
 				{showTerrain && (
 					<ElevationTerrain

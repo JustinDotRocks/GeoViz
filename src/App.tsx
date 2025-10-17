@@ -133,7 +133,7 @@ function App() {
 					console.log("Weather API response:", data); // ADD THIS LINE
 
 					// TODO: Parse the actual API response here!
-					// FIXED: Parse the actual API response correctly
+					// Parse the actual API response correctly
 					const feature = data.features?.[0];
 					const props = feature?.properties || {};
 
