@@ -10,9 +10,60 @@ interface ThreeSceneProps {
 	data: any;
 	selectedData?: string[];
 	showTerrain: boolean;
+	weatherData: any;
 }
 
 // Weather overlay visualization
+// function WeatherOverlay({
+// 	weatherData,
+// 	visible = true,
+// }: {
+// 	weatherData: any;
+// 	visible?: boolean;
+// }) {
+// 	const meshRef = useRef<THREE.Mesh>(null);
+
+// 	useFrame((state) => {
+// 		if (meshRef.current && meshRef.current.material && visible) {
+// 			const material = meshRef.current
+// 				.material as THREE.MeshBasicMaterial;
+// 			const baseOpacity = weatherData?.opacity || 0.3;
+// 			const weatherIntensity = weatherData?.visible ? 1 : 0.5;
+// 			material.opacity =
+// 				baseOpacity +
+// 				Math.sin(state.clock.elapsedTime * weatherIntensity) *
+// 					0.1;
+// 		}
+// 	});
+
+// 	const getWeatherColor = () => {
+// 		if (!weatherData) return "#87CEEB";
+// 		if (weatherData.type === "rain") return "#4682B4";
+// 		if (weatherData.type === "snow") return "#F0F8FF";
+// 		if (weatherData.type === "fog") return "#708090";
+// 		if (weatherData.temperature < 0) return "#B0E0E6";
+// 		return "#87CEEB";
+// 	};
+
+// 	if (!visible || (weatherData && weatherData.visible === false)) {
+// 		return null;
+// 	}
+
+// 	return (
+// 		<mesh
+// 			ref={meshRef}
+// 			position={[0, 2, 0]}
+// 			rotation={[-Math.PI / 2, 0, 0]}
+// 		>
+// 			<planeGeometry args={[25, 25]} />
+// 			<meshBasicMaterial
+// 				color={getWeatherColor()}
+// 				transparent
+// 				opacity={weatherData?.opacity || 0.3}
+// 			/>
+// 		</mesh>
+// 	);
+// }
 function WeatherOverlay({
 	weatherData,
 	visible = true,
@@ -20,47 +71,58 @@ function WeatherOverlay({
 	weatherData: any;
 	visible?: boolean;
 }) {
-	const meshRef = useRef<THREE.Mesh>(null);
+	if (!visible || !weatherData) return null;
 
-	useFrame((state) => {
-		if (meshRef.current && meshRef.current.material && visible) {
-			const material = meshRef.current
-				.material as THREE.MeshBasicMaterial;
-			const baseOpacity = weatherData?.opacity || 0.3;
-			const weatherIntensity = weatherData?.visible ? 1 : 0.5;
-			material.opacity =
-				baseOpacity +
-				Math.sin(state.clock.elapsedTime * weatherIntensity) *
-					0.1;
-		}
-	});
-
-	const getWeatherColor = () => {
-		if (!weatherData) return "#87CEEB";
-		if (weatherData.type === "rain") return "#4682B4";
-		if (weatherData.type === "snow") return "#F0F8FF";
-		if (weatherData.type === "fog") return "#708090";
-		if (weatherData.temperature < 0) return "#B0E0E6";
-		return "#87CEEB";
-	};
-
-	if (!visible || (weatherData && weatherData.visible === false)) {
-		return null;
-	}
+	console.log("WeatherOverlay rendering with data:", weatherData);
 
 	return (
-		<mesh
-			ref={meshRef}
-			position={[0, 2, 0]}
-			rotation={[-Math.PI / 2, 0, 0]}
-		>
-			<planeGeometry args={[25, 25]} />
-			<meshBasicMaterial
-				color={getWeatherColor()}
-				transparent
-				opacity={weatherData?.opacity || 0.3}
-			/>
-		</mesh>
+		<group position={[0, 5, 0]}>
+			{/* Display weather data as text */}
+			<Text
+				position={[0, 0, 0]}
+				fontSize={1}
+				color="cyan"
+				anchorX="center"
+				anchorY="middle"
+			>
+				{`Environment Canada Weather
+Station: ${weatherData.station || "N/A"}
+Date: ${weatherData.date ? weatherData.date.split(" ")[0] : "N/A"}
+Temperature: ${weatherData.temperature ?? "N/A"}°C
+Precipitation: ${weatherData.precipitation ?? "N/A"}mm`}
+			</Text>
+
+			{/* Optional: Visual weather effect */}
+			{weatherData.temperature !== null &&
+				weatherData.temperature < 0 && (
+					<mesh
+						position={[0, -1, 0]}
+						rotation={[-Math.PI / 2, 0, 0]}
+					>
+						<planeGeometry args={[15, 15]} />
+						<meshBasicMaterial
+							color="#B0E0E6"
+							transparent
+							opacity={0.2}
+						/>
+					</mesh>
+				)}
+
+			{weatherData.precipitation !== null &&
+				weatherData.precipitation > 0 && (
+					<mesh
+						position={[0, -1.1, 0]}
+						rotation={[-Math.PI / 2, 0, 0]}
+					>
+						<planeGeometry args={[15, 15]} />
+						<meshBasicMaterial
+							color="#4682B4"
+							transparent
+							opacity={0.3}
+						/>
+					</mesh>
+				)}
+		</group>
 	);
 }
 
@@ -105,10 +167,14 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 	data,
 	showTerrain,
 	selectedData = [],
+	weatherData,
 }) => {
 	// Determine what to show based on selected data
 	// const showElevation = selectedData.includes("nrcan-elevation");
 	const showWeather = selectedData.includes("environment-canada");
+
+	console.log("ThreeScene weatherData:", weatherData);
+	console.log("ThreeScene showWeather:", showWeather);
 
 	return (
 		<MuiBox
@@ -172,11 +238,13 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 					/>
 				)}
 
-				{/* Weather overlay */}
-				<WeatherOverlay
-					weatherData={data?.weather}
-					visible={showWeather}
-				/>
+				{/* Weather overlay: use weatherData prop and showWeather toggle */}
+				{weatherData && showWeather && (
+					<WeatherOverlay
+						weatherData={weatherData}
+						visible={true}
+					/>
+				)}
 
 				{/* Debug info - extracted component */}
 				<TerrainDebugInfo
