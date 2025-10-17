@@ -1,4 +1,3 @@
-// filepath: src/App.tsx
 import { useState } from "react";
 import {
 	Box,
@@ -189,7 +188,13 @@ function App() {
 						border: "2px solid rgba(255, 255, 255, 0.1)",
 					}}
 				>
-					<ThreeScene data={mapData} />
+					{/* Pass showTerrain prop to ThreeScene */}
+					<ThreeScene
+						data={mapData}
+						showTerrain={selectedData.includes(
+							"nrcan-elevation"
+						)}
+					/>{" "}
 				</Box>
 			</Box>
 		</ThemeProvider>
