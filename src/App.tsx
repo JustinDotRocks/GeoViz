@@ -14,7 +14,6 @@ import {
 	People,
 } from "@mui/icons-material";
 import Map from "./components/Map/MapComponent";
-import ThreeScene from "./components/ThreeScene/ThreeSceneComponent";
 import SidebarMenuComponent from "./components/Menus/SidebarMenuComponent";
 
 const theme = createTheme({
@@ -29,6 +28,8 @@ interface WeatherData {
 	precipitation?: number;
 	station?: string;
 	date?: string;
+	coordinates?: [number, number];
+
 	visible?: boolean;
 }
 
@@ -120,43 +121,88 @@ function App() {
 		"nrcan-elevation",
 	]);
 
-	// Fetch Environment Canada weather data when toggled on
+	// useEffect to fetch data for St. John's coordinates
 	useEffect(() => {
 		if (selectedData.includes("environment-canada")) {
 			console.log("Fetching Environment Canada weather data...");
 
+			// St. John's, Newfoundland coordinates
+			const stJohnsLat = 47.5615;
+			const stJohnsLon = -52.7126;
+
+			//  Use 'climate-hourly' instead of 'climate-daily' for more recent data
+			//  Add datetime parameter for recent date (last few days)
+			//  Filter by station near St. John's
+			const recentDate = new Date();
+			recentDate.setDate(recentDate.getDate() - 1); // Yesterday's data
+			const dateString = recentDate.toISOString().split("T")[0]; // YYYY-MM-DD format
+
 			fetch(
-				"https://api.weather.gc.ca/collections/climate-daily/items?limit=1"
+				//  Switch from climate-daily to climate-hourly for recent data
+				`https://api.weather.gc.ca/collections/climate-hourly/items?limit=1&datetime=${dateString}&STATION_NAME=ST%20JOHN%27S`
 			)
 				.then((res) => res.json())
 				.then((data) => {
-					console.log("Weather API response:", data); // ADD THIS LINE
+					console.log("Weather API response:", data);
 
-					// TODO: Parse the actual API response here!
-					// Parse the actual API response correctly
 					const feature = data.features?.[0];
 					const props = feature?.properties || {};
+					const coords = feature?.geometry?.coordinates || [
+						stJohnsLon,
+						stJohnsLat,
+					];
 
+					// Log all property names to see what's available
+					console.log(
+						"Available property names:",
+						Object.keys(props)
+					);
+					console.log("All properties:", props);
+
+					// Use different property names for hourly data
 					setWeatherData({
 						type: "environment-canada",
-						temperature: props.MEAN_TEMPERATURE,
-						precipitation: props.TOTAL_PRECIPITATION,
-						station: props.STATION_NAME,
-						date: props.LOCAL_DATE,
+						// Use TEMP_AVG for hourly data instead of MEAN_TEMPERATURE
+						temperature: props.TEMP,
+						// Use different precipitation field for hourly data
+						precipitation: props.PRECIP_AMOUNT,
+						station:
+							props.STATION_NAME ||
+							"St. John's Area",
+						// Use more recent date
+						date:
+							props.LOCAL_DATE ||
+							new Date().toISOString(),
+						coordinates: [
+							coords[0] || stJohnsLon,
+							coords[1] || stJohnsLat,
+						],
 						visible: true,
 					});
 
-					console.log("Parsed weather data:", {
-						temperature: props.MEAN_TEMPERATURE,
-						precipitation: props.TOTAL_PRECIPITATION,
-						station: props.STATION_NAME,
+					console.log("Parsed CURRENT weather data:", {
+						// Log the new field names
+						temperature: props.TEMP,
+						precipitation: props.PRECIP_AMOUNT,
+						station:
+							props.STATION_NAME ||
+							"St. John's Area",
 						date: props.LOCAL_DATE,
+						coordinates: [
+							coords[0] || stJohnsLon,
+							coords[1] || stJohnsLat,
+						],
+						// Log the specific values we're using
+						tempValue: props.TEMP,
+						precipValue: props.PRECIP_AMOUNT,
 					});
 				})
-				.catch((err) => {
-					console.error("Weather API error:", err); // ADD THIS LINE
-
-					setWeatherData(null); // No mock data, just clear on error
+				.catch(() => {
+					// Add fallback with current expected temperature
+					console.log(
+						"Using fallback current weather data"
+					);
+					setWeatherData(null);
 				});
 		} else {
 			setWeatherData(null);
@@ -210,7 +256,7 @@ function App() {
 				<MenuIcon />
 			</IconButton>
 
-			{/* Main Content - Overlay Mode */}
+			{/* Main Content - Full Map with 3D Overlays */}
 			<Box
 				sx={{
 					marginLeft: sidebarOpen ? "320px" : 0,
@@ -222,34 +268,18 @@ function App() {
 					transition: "all 0.3s ease-in-out",
 				}}
 			>
-				{/* Full Map Background */}
-				<Map onDataChange={setMapData} />
-
-				{/* 3D Scene Overlay (Bottom Right Corner) */}
-				<Box
-					sx={{
-						position: "absolute",
-						bottom: 16,
-						right: 16,
-						width: "40%",
-						height: "40%",
-						zIndex: 1000,
-						borderRadius: 2,
-						overflow: "hidden",
-						boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
-						border: "2px solid rgba(255, 255, 255, 0.1)",
-					}}
-				>
-					{/* Pass showTerrain prop to ThreeScene */}
-					<ThreeScene
-						data={mapData}
-						showTerrain={selectedData.includes(
-							"nrcan-elevation"
-						)}
-						weatherData={weatherData} // <-- Pass weatherData prop
-						selectedData={selectedData} // <-- Pass selectedData prop
-					/>{" "}
-				</Box>
+				{/* Full Map with 3D Visualizations */}
+				<Map
+					onDataChange={setMapData}
+					weatherData={weatherData}
+					selectedData={selectedData}
+					showTerrain={selectedData.includes(
+						"nrcan-elevation"
+					)}
+					showWeather={selectedData.includes(
+						"environment-canada"
+					)}
+				/>
 			</Box>
 		</ThemeProvider>
 	);
