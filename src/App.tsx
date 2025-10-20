@@ -12,6 +12,8 @@ import {
 	Terrain,
 	Waves,
 	People,
+	WaterDrop,
+	Thermostat,
 } from "@mui/icons-material";
 import Map from "./components/Map/MapComponent";
 import SidebarMenuComponent from "./components/Menus/SidebarMenuComponent";
@@ -29,8 +31,10 @@ interface WeatherData {
 	station?: string;
 	date?: string;
 	coordinates?: [number, number];
-
 	visible?: boolean;
+	// Individual visibility controls
+	showTemperature?: boolean;
+	showPrecipitation?: boolean;
 }
 
 // Define data categories and sources
@@ -47,6 +51,25 @@ const initialCategories = [
 				icon: <WbSunny />,
 				description: "Real-time weather, forecasts, alerts",
 				enabled: true,
+				// ADD: Nested weather data types
+				subSources: [
+					{
+						id: "temperature",
+						label: "Temperature",
+						icon: <Thermostat />,
+						description: "Temperature spheres",
+						enabled: true,
+						parentId: "environment-canada",
+					},
+					{
+						id: "precipitation",
+						label: "Precipitation",
+						icon: <WaterDrop />,
+						description: "Precipitation cylinders",
+						enabled: true,
+						parentId: "environment-canada",
+					},
+				],
 			},
 			{
 				id: "openweathermap",
@@ -118,21 +141,29 @@ function App() {
 	const [categories, setCategories] = useState(initialCategories);
 	const [selectedData, setSelectedData] = useState([
 		"environment-canada",
+		"temperature", // Individual temperature toggle
+		"precipitation", // Individual precipitation toggle
 		"nrcan-elevation",
 	]);
 
+	// Add helper functions to check individual weather toggles
+	const isEnvironmentCanadaEnabled = () =>
+		selectedData.includes("environment-canada");
+	const isTemperatureEnabled = () =>
+		selectedData.includes("temperature") &&
+		isEnvironmentCanadaEnabled();
+	const isPrecipitationEnabled = () =>
+		selectedData.includes("precipitation") &&
+		isEnvironmentCanadaEnabled();
+
 	// useEffect to fetch data for St. John's coordinates
 	useEffect(() => {
-		if (selectedData.includes("environment-canada")) {
+		if (isEnvironmentCanadaEnabled()) {
 			console.log("Fetching Environment Canada weather data...");
 
 			// St. John's, Newfoundland coordinates
 			const stJohnsLat = 47.5615;
 			const stJohnsLon = -52.7126;
-
-			//  Use 'climate-hourly' instead of 'climate-daily' for more recent data
-			//  Add datetime parameter for recent date (last few days)
-			//  Filter by station near St. John's
 			const recentDate = new Date();
 			recentDate.setDate(recentDate.getDate() - 1); // Yesterday's data
 			const dateString = recentDate.toISOString().split("T")[0]; // YYYY-MM-DD format
@@ -162,14 +193,11 @@ function App() {
 					// Use different property names for hourly data
 					setWeatherData({
 						type: "environment-canada",
-						// Use TEMP_AVG for hourly data instead of MEAN_TEMPERATURE
 						temperature: props.TEMP,
-						// Use different precipitation field for hourly data
 						precipitation: props.PRECIP_AMOUNT,
 						station:
 							props.STATION_NAME ||
 							"St. John's Area",
-						// Use more recent date
 						date:
 							props.LOCAL_DATE ||
 							new Date().toISOString(),
@@ -178,10 +206,12 @@ function App() {
 							coords[1] || stJohnsLat,
 						],
 						visible: true,
+						//  Include the individual toggle states
+						showTemperature: isTemperatureEnabled(),
+						showPrecipitation: isPrecipitationEnabled(),
 					});
 
 					console.log("Parsed CURRENT weather data:", {
-						// Log the new field names
 						temperature: props.TEMP,
 						precipitation: props.PRECIP_AMOUNT,
 						station:
@@ -192,13 +222,11 @@ function App() {
 							coords[0] || stJohnsLon,
 							coords[1] || stJohnsLat,
 						],
-						// Log the specific values we're using
 						tempValue: props.TEMP,
 						precipValue: props.PRECIP_AMOUNT,
 					});
 				})
 				.catch(() => {
-					// Add fallback with current expected temperature
 					console.log(
 						"Using fallback current weather data"
 					);
@@ -209,12 +237,45 @@ function App() {
 		}
 	}, [selectedData]);
 
+	// Enhanced data toggle handler for nested controls
 	const handleDataToggle = (dataId: string) => {
-		setSelectedData((prev) =>
-			prev.includes(dataId)
-				? prev.filter((id) => id !== dataId)
-				: [...prev, dataId]
-		);
+		if (dataId === "environment-canada") {
+			// If toggling Environment Canada off, remove all weather sub-items
+			if (selectedData.includes("environment-canada")) {
+				setSelectedData((prev) =>
+					prev.filter(
+						(id) =>
+							![
+								"environment-canada",
+								"temperature",
+								"precipitation",
+							].includes(id)
+					)
+				);
+			} else {
+				// If toggling Environment Canada on, add it but don't auto-enable sub-items
+				setSelectedData((prev) => [
+					...prev,
+					"environment-canada",
+				]);
+			}
+		} else if (["temperature", "precipitation"].includes(dataId)) {
+			// Individual weather data toggles
+			if (isEnvironmentCanadaEnabled()) {
+				setSelectedData((prev) =>
+					prev.includes(dataId)
+						? prev.filter((id) => id !== dataId)
+						: [...prev, dataId]
+				);
+			}
+		} else {
+			// Regular toggle for other data sources
+			setSelectedData((prev) =>
+				prev.includes(dataId)
+					? prev.filter((id) => id !== dataId)
+					: [...prev, dataId]
+			);
+		}
 	};
 
 	const handleCategoryToggle = (categoryId: string) => {
