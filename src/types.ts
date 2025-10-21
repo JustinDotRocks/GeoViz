@@ -75,3 +75,11 @@ export interface CategoryItemProps {
 	// isParentEnabled: (parentId: string) => boolean;
 	// isSubSourceEnabled: (subSourceId: string, parentId: string) => boolean;
 }
+
+export interface MapComponentProps {
+	onDataChange: (data: any) => void;
+	weatherData?: any;
+	selectedData?: string[];
+	showTerrain?: boolean;
+	showWeather?: boolean;
+}
