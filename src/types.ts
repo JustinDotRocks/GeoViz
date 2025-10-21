@@ -49,3 +49,29 @@ export interface DataCategory {
 	expanded: boolean;
 	sources: DataSource[];
 }
+
+export interface SidebarMenuComponentProps {
+	open: boolean;
+	selectedData: string[];
+	onDataToggle: (dataId: string) => void;
+	onCategoryToggle: (categoryId: string) => void;
+	categories: DataCategory[];
+}
+
+export interface DataSourceItemProps {
+	source: DataSource;
+	categoryExpanded: boolean;
+	selectedData: string[];
+	onDataToggle: (dataId: string) => void;
+	isParentEnabled: (parentId: string) => boolean;
+	isSubSourceEnabled: (subSourceId: string, parentId: string) => boolean;
+}
+
+export interface CategoryItemProps {
+	category: DataCategory;
+	selectedData: string[];
+	onDataToggle: (dataId: string) => void;
+	onCategoryToggle: (categoryId: string) => void;
+	// isParentEnabled: (parentId: string) => boolean;
+	// isSubSourceEnabled: (subSourceId: string, parentId: string) => boolean;
+}
